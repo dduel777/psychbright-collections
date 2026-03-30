@@ -80,8 +80,7 @@ tbody td{padding:9px 12px}
 .alert-ok{background:var(--green-light);border:1px solid #86efac;color:var(--green)}
 .section{display:none}.section.visible{display:block}
 .open-notion-wrap{text-align:center;margin-top:20px}
-</style>
-</head>
+</style>&#128202;</head>
 <body>
 <header>
   <div>
@@ -201,7 +200,7 @@ function processFile(file){
       state.rawData=rows;
       state.allCptCodes=[...new Set(rows.map(r=>String(r.TransactionCode||'').trim()).filter(Boolean))].sort();
       dz.classList.add('has-file');
-      document.getElementById('drop-icon').textContent='Ã¢ÂÂ';
+      document.getElementById('drop-icon').textContent='';
       document.getElementById('drop-label').textContent=file.name;
       document.getElementById('drop-sub').textContent=rows.length.toLocaleString()+' rows - '+new Set(rows.map(r=>r.PatientId)).size+' unique patients found';
       document.getElementById('btn-next-1').disabled=false;
@@ -243,9 +242,9 @@ function buildPreview(){
   });
   state.aggregated=Object.values(map).map(function(p){
     var priority,agingText;
-    if(p.b90plus>0){priority='ð´ High';agingText='ð´ '+fmt(p.b90plus)+' (90d+)'+(p.b31_90>0?' Med '+fmt(p.b31_90)+' (31-90d)':'')+(p.b0_30>0?' Low '+fmt(p.b0_30)+' (0-30d)':'');}
-    else if(p.b31_90>0){priority='ð¡ Medium';agingText='ð¡ '+fmt(p.b31_90)+' (31-90d)'+(p.b0_30>0?' Low '+fmt(p.b0_30)+' (0-30d)':'');}
-    else{priority='ð¢ Low';agingText='ð¢ '+fmt(p.b0_30)+' (0-30d)';}
+    if(p.b90plus>0){priority=' High';agingText=' '+fmt(p.b90plus)+' (90d+)'+(p.b31_90>0?' Med '+fmt(p.b31_90)+' (31-90d)':'')+(p.b0_30>0?' Low '+fmt(p.b0_30)+' (0-30d)':'');}
+    else if(p.b31_90>0){priority=' Medium';agingText=' '+fmt(p.b31_90)+' (31-90d)'+(p.b0_30>0?' Low '+fmt(p.b0_30)+' (0-30d)':'');}
+    else{priority=' Low';agingText=' '+fmt(p.b0_30)+' (0-30d)';}
     return Object.assign({},p,{priority:priority,agingText:agingText});
   }).filter(function(p){return p.totalBalance>0}).sort(function(a,b){var pr={High:0,Medium:1,Low:2};return(pr[a.priority]-pr[b.priority])||(b.totalBalance-a.totalBalance)});
   var high=state.aggregated.filter(function(p){return p.priority==='High'}).length;
@@ -295,7 +294,7 @@ async function updatePage(pageId,p){await nFetch('/pages/'+pageId,'PATCH',{prope
 async function createPage(p){var props=buildProps(p);props['Status']={select:{name:'Active'}};await nFetch('/pages','POST',{parent:{database_id:DB_ID},properties:props});}
 
 function buildProps(p){
-  var props={'Patient Name':{title:[{text:{content:p.patientName}}]},'Patient ID':{rich_text:[{text:{content:p.patientId}}]},'Total Balance':{number:r2(p.totalBalance)},'Balance 0-30 Days':{number:r2(p.b0_30)},'Balance 31-90 Days':{number:r2(p.b31_90)},'Balance 90+ Days':{number:r2(p.b90plus)},'Max Aging Days':{number:p.maxAgingDays},'Priority':{select:{name:p.priority==='High'?'ð´ High':p.priority==='Medium'?'ð¡ Medium':'ð¢ Low'}},'Aging Summary':{rich_text:[{text:{content:p.agingText}}]}};
+  var props={'Patient Name':{title:[{text:{content:p.patientName}}]},'Patient ID':{rich_text:[{text:{content:p.patientId}}]},'Total Balance':{number:r2(p.totalBalance)},'Balance 0-30 Days':{number:r2(p.b0_30)},'Balance 31-90 Days':{number:r2(p.b31_90)},'Balance 90+ Days':{number:r2(p.b90plus)},'Max Aging Days':{number:p.maxAgingDays},'Priority':{select:{name:p.priority==='High'?' High':p.priority==='Medium'?' Medium':' Low'}},'Aging Summary':{rich_text:[{text:{content:p.agingText}}]}};
   if(p.oldestDos)props['Oldest Service Date']={date:{start:p.oldestDos.toISOString().split('T')[0]}};
   return props;
 }
@@ -307,11 +306,11 @@ async function nFetch(path,method,body){
 
 function fmt(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(n||0);}
 function r2(n){return Math.round((n||0)*100)/100;}
-function showAlert(el,type,msg){el.innerHTML='<div class="alert alert-'+type+'"><span>'+(type==='ok'?'Ã¢ÂÂ':type==='warn'?'Ã¢ÂÂ ':'Ã¢ÂÂ')+'</span><span>'+msg+'</span></div>';}
+function showAlert(el,type,msg){el.innerHTML='<div class="alert alert-'+type+'"><span>'+(type==='ok'?'':type==='warn'?'':'')+'</span><span>'+msg+'</span></div>';}
 
 function resetTool(){
   state.rawData=[];state.aggregated=[];state.allCptCodes=[];state.excludedCodes=new Set(DEFAULT_EXCLUDED);
-  dz.classList.remove('has-file');document.getElementById('drop-icon').textContent='Ã°ÂÂÂ';document.getElementById('drop-label').textContent='Drop your Valant export here';document.getElementById('drop-sub').textContent='Click or drag and drop - .xlsx or .csv file from Valant';document.getElementById('btn-next-1').disabled=true;document.getElementById('upload-alert').innerHTML='';document.getElementById('file-input').value='';document.getElementById('sync-progress').style.display='none';document.getElementById('sync-results').style.display='none';document.getElementById('sync-ready').style.display='block';document.getElementById('progress-log').innerHTML='';goTo(1);
+  dz.classList.remove('has-file');document.getElementById('drop-icon').textContent='';document.getElementById('drop-label').textContent='Drop your Valant export here';document.getElementById('drop-sub').textContent='Click or drag and drop - .xlsx or .csv file from Valant';document.getElementById('btn-next-1').disabled=true;document.getElementById('upload-alert').innerHTML='';document.getElementById('file-input').value='';document.getElementById('sync-progress').style.display='none';document.getElementById('sync-results').style.display='none';document.getElementById('sync-ready').style.display='block';document.getElementById('progress-log').innerHTML='';goTo(1);
 }
 </script>
 </body>
