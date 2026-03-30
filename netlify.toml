@@ -1,8 +1,10 @@
 [build]
   functions = "netlify/functions"
+  publish = "."
 
 [build.environment]
   NODE_VERSION = "18"
+  AWS_LAMBDA_JS_RUNTIME = "nodejs18.x"
 
 [[redirects]]
   from = "/api/*"
