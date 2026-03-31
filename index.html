@@ -232,9 +232,9 @@ function buildPreview(){
   var filtered=state.rawData.filter(r=>!state.excludedCodes.has(String(r.TransactionCode||'').trim()));
   var map={};
   filtered.forEach(function(row){
-    var pid=String(row.PatientId||'').trim();if(!pid)return;
+    var pid=String(row.PatientId||'').trim();if(!pid)return;var dob=String(row.BirthDate||'').trim();
     var bal=parseFloat(row.PatientBalance)||0,aging=parseInt(row.AgingDays)||0,dos=row.DateOfService?new Date(row.DateOfService):null;
-    if(!map[pid])map[pid]={patientId:pid,patientName:String(row.PatientName||'').trim(),totalBalance:0,b0_30:0,b31_90:0,b90plus:0,maxAgingDays:0,oldestDos:null};
+    if(!map[pid])map[pid]={patientId:pid,dob:dob,patientName:String(row.PatientName||'').trim(),totalBalance:0,b0_30:0,b31_90:0,b90plus:0,maxAgingDays:0,oldestDos:null};
     var p=map[pid];p.totalBalance+=bal;
     if(aging<=30)p.b0_30+=bal;else if(aging<=90)p.b31_90+=bal;else p.b90plus+=bal;
     if(aging>p.maxAgingDays)p.maxAgingDays=aging;
@@ -286,7 +286,7 @@ async function startSync(){
 
 async function fetchAll(){
   var map={},cursor,hasMore=true;
-  while(hasMore){var body={page_size:100};if(cursor)body.start_cursor=cursor;var res=await nFetch('/databases/'+DB_ID+'/query','POST',body);(res.results||[]).forEach(function(page){var pid=page.properties&&page.properties['Patient ID']&&page.properties['Patient ID'].rich_text&&page.properties['Patient ID'].rich_text[0]&&page.properties['Patient ID'].rich_text[0].plain_text||'';var status=page.properties&&page.properties['Status']&&page.properties['Status'].select&&page.properties['Status'].select.name||'';if(pid)map[pid]={pageId:page.id,status:status}});hasMore=res.has_more;cursor=res.next_cursor;}
+  while(hasMore){var body={page_size:100};if(cursor)body.start_cursor=cursor;var res=await nFetch('/databases/'+DB_ID+'/query','POST',body);(res.results||[]).forEach(function(page){var pid=page.properties&&page.properties['DOB']&&page.properties['DOB'].rich_text&&page.properties['DOB'].rich_text[0]&&page.properties['DOB'].rich_text[0].plain_text||'';var status=page.properties&&page.properties['Status']&&page.properties['Status'].select&&page.properties['Status'].select.name||'';if(pid)map[pid]={pageId:page.id,status:status}});hasMore=res.has_more;cursor=res.next_cursor;}
   return map;
 }
 
@@ -294,7 +294,7 @@ async function updatePage(pageId,p){await nFetch('/pages/'+pageId,'PATCH',{prope
 async function createPage(p){var props=buildProps(p);props['Status']={select:{name:'Active'}};await nFetch('/pages','POST',{parent:{database_id:DB_ID},properties:props});}
 
 function buildProps(p){
-  var props={'Patient Name':{title:[{text:{content:p.patientName}}]},'Patient ID':{rich_text:[{text:{content:p.patientId}}]},'Total Balance':{number:r2(p.totalBalance)},'Balance 0-30 Days':{number:r2(p.b0_30)},'Balance 31-90 Days':{number:r2(p.b31_90)},'Balance 90+ Days':{number:r2(p.b90plus)},'Max Aging Days':{number:p.maxAgingDays},'Priority':{select:{name:p.priority==='High'?' High':p.priority==='Medium'?' Medium':' Low'}},'Aging Summary':{rich_text:[{text:{content:p.agingText}}]}};
+  var props={'Patient Name':{title:[{text:{content:p.patientName}}]},'DOB':{rich_text:[{text:{content:p.dob||''}}]},'Total Balance':{number:r2(p.totalBalance)},'Balance 0-30 Days':{number:r2(p.b0_30)},'Balance 31-90 Days':{number:r2(p.b31_90)},'Balance 90+ Days':{number:r2(p.b90plus)},'Max Aging Days':{number:p.maxAgingDays},'Priority':{select:{name:p.priority==='High'?' High':p.priority==='Medium'?' Medium':' Low'}},'Aging Summary':{rich_text:[{text:{content:p.agingText}}]}};
   if(p.oldestDos)props['Oldest Service Date']={date:{start:p.oldestDos.toISOString().split('T')[0]}};
   return props;
 }
