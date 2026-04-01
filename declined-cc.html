@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PsychBright - Declined CC Sync</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--teal:#0d6e6e;--teal-light:#e6f4f4;--teal-mid:#b2d8d8;--slate:#1e2d2d;--mid:#4a5e5e;--border:#d0e0e0;--bg:#f5fafa;--white:#fff;--red:#c0392b;--red-light:#fdecea;--amber:#d97706;--amber-light:#fef3c7;--green:#15803d;--green-light:#dcfce7;--gray:#6b7280;--gray-light:#f3f4f6;--radius:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:var(--bg);color:var(--slate);min-height:100vh}
+header{background:var(--slate);color:#fff;padding:18px 32px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:15px;font-weight:600}
+header .sub{font-size:12px;color:var(--teal-mid)}
+.steps-bar{background:#fff;border-bottom:1px solid var(--border);padding:0 32px;display:flex}
+.step-tab{padding:14px 20px;font-size:13px;font-weight:500;color:var(--gray);border-bottom:3px solid transparent;display:flex;align-items:center;gap:8px}
+.step-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.step-tab.done{color:var(--green)}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--gray-light);color:var(--gray);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.step-tab.active .step-num{background:var(--teal);color:#fff}
+.step-tab.done .step-num{background:var(--green);color:#fff}
+.main{max-width:900px;margin:32px auto;padding:0 24px}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:20px}
+.card-title{font-size:13px;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:18px}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;background:var(--teal-light);color:var(--teal);font-size:12px;font-weight:600;margin-bottom:20px}
+.drop-zone{border:2px dashed var(--teal-mid);border-radius:var(--radius);padding:64px 32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--teal-light)}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--teal);background:#d0ecec}
+.drop-zone.has-file{border-style:solid;border-color:var(--green);background:var(--green-light)}
+.drop-icon{font-size:48px;margin-bottom:16px}
+.drop-label{font-size:16px;font-weight:600;color:var(--teal);margin-bottom:8px}
+.drop-sub{font-size:13px;color:var(--mid)}
+.drop-zone.has-file .drop-label{color:var(--green)}
+#file-input{display:none}
+.preview-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-box{padding:14px;border-radius:var(--radius);border:1px solid var(--border);text-align:center}
+.stat-num{font-size:22px;font-weight:600;color:var(--teal)}
+.stat-label{font-size:11px;color:var(--gray);margin-top:3px}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius)}
+.preview-scroll{max-height:320px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{background:var(--slate);color:var(--teal-mid);padding:10px 12px;text-align:left;font-weight:500;font-size:11px;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:hover{background:var(--teal-light)}
+tbody td{padding:9px 12px}
+.reason-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.reason-nsf,.reason-closed,.reason-fraud{background:#fdecea;color:var(--red)}
+.reason-expired,.reason-blocked{background:var(--amber-light);color:var(--amber)}
+.reason-general{background:var(--gray-light);color:var(--gray)}
+.btn{padding:12px 24px;border-radius:var(--radius);border:none;cursor:pointer;font-size:14px;font-weight:600;font-family:sans-serif}
+.btn-primary{background:var(--teal);color:#fff}
+.btn-primary:hover{background:#0a5858}
+.btn-primary:disabled{background:var(--gray);cursor:not-allowed;opacity:.6}
+.btn-secondary{background:var(--gray-light);color:var(--slate)}
+.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.progress-bar-wrap{background:var(--gray-light);border-radius:99px;height:8px;overflow:hidden;margin:12px 0}
+.progress-bar-fill{height:100%;background:var(--teal);border-radius:99px;transition:width .3s ease}
+.progress-log{font-size:11px;color:var(--mid);max-height:200px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;line-height:1.8}
+.log-ok{color:var(--green)}.log-new{color:var(--teal)}.log-resolve{color:var(--amber)}.log-skip{color:var(--gray)}.log-err{color:var(--red)}
+.result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.result-box{padding:18px;border-radius:var(--radius);text-align:center}
+.result-box.created{background:var(--teal-light);border:1px solid var(--teal-mid)}
+.result-box.updated{background:var(--amber-light);border:1px solid #fcd34d}
+.result-box.resolved{background:var(--green-light);border:1px solid #86efac}
+.result-box.skipped{background:var(--gray-light);border:1px solid var(--border)}
+.result-num{font-size:28px;font-weight:600}
+.result-box.created .result-num{color:var(--teal)}
+.result-box.updated .result-num{color:var(--amber)}
+.result-box.resolved .result-num{color:var(--green)}
+.result-box.skipped .result-num{color:var(--gray)}
+.result-label{font-size:12px;color:var(--mid);margin-top:4px}
+.notion-link{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--slate);color:#fff;border-radius:var(--radius);text-decoration:none;font-size:14px;font-weight:600}
+.alert{padding:12px 16px;border-radius:var(--radius);font-size:13px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px}
+.alert-warn{background:var(--amber-light);border:1px solid #fcd34d;color:#92400e}
+.alert-ok{background:var(--green-light);border:1px solid #86efac;color:var(--green)}
+.alert-err{background:var(--red-light);border:1px solid #f8b4b4;color:var(--red)}
+.section{display:none}.section.visible{display:block}
+.open-notion-wrap{text-align:center;margin-top:20px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>PsychBright Health - Declined CC Sync</h1>
+    <div class="sub">Daily workflow - Valant export to Notion</div>
+  </div>
+  <div class="sub" id="header-date"></div>
+</header>
+<div class="steps-bar">
+  <div class="step-tab active" id="tab-1"><span class="step-num">1</span>Upload File</div>
+  <div class="step-tab" id="tab-2"><span class="step-num">2</span>Preview</div>
+  <div class="step-tab" id="tab-3"><span class="step-num">3</span>Sync to Notion</div>
+</div>
+<div class="main">
+  <div class="section visible" id="section-1">
+    <div class="card">
+      <div class="card-title">Upload Today's CC Transaction Report</div>
+      <div class="badge">Run every morning after downloading from Valant</div>
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-icon" id="drop-icon">&#128179;</div>
+        <div class="drop-label" id="drop-label">Drop your Valant CC report here</div>
+        <div class="drop-sub" id="drop-sub">Click or drag and drop - .xlsx file from Valant Integrated CC Transactions</div>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.csv,.xls">
+      <div id="upload-alert" style="margin-top:12px"></div>
+      <div class="actions"><button class="btn btn-primary" id="btn-next-1" disabled>Preview &#8594;</button></div>
+    </div>
+  </div>
+  <div class="section" id="section-2">
+    <div class="card">
+      <div class="card-title">Preview Before Syncing</div>
+      <div class="preview-stats" id="preview-stats"></div>
+      <div class="alert alert-warn"><span>&#9888;</span><span>Decline Reason, Count, and Last Declined Date will be updated for existing patients. <strong>Notes, Outreach Method, and Follow-Up Date will never be overwritten.</strong> Patients no longer in this file will be automatically marked Resolved.</span></div>
+      <div class="table-wrap"><div class="preview-scroll">
+        <table>
+          <thead><tr><th>Patient Name</th><th>Patient ID</th><th>Decline Reason</th><th>Decline Count</th><th>Last Declined Date</th></tr></thead>
+          <tbody id="preview-tbody"></tbody>
+        </table>
+      </div></div>
+      <div class="actions">
+        <button class="btn btn-secondary" id="btn-back-2">Back</button>
+        <button class="btn btn-primary" id="btn-sync-go">Sync to Notion &#8594;</button>
+      </div>
+    </div>
+  </div>
+  <div class="section" id="section-3">
+    <div class="card">
+      <div class="card-title">Sync to Notion</div>
+      <div id="sync-ready">
+        <div class="alert alert-warn"><span>&#9888;</span><span>Ready to sync to Declined CC Outreach database. Press Start when ready.</span></div>
+        <div class="actions" style="margin-top:0">
+          <button class="btn btn-secondary" id="btn-back-3">Back</button>
+          <button class="btn btn-primary" id="btn-start-sync">&#9654; Start Sync</button>
+        </div>
+      </div>
+      <div id="sync-progress" style="display:none">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mid);margin-bottom:4px"><span id="progress-label">Starting...</span><span id="progress-pct">0%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+        <div class="progress-log" id="progress-log"></div>
+      </div>
+      <div id="sync-results" style="display:none;margin-top:20px">
+        <div class="result-grid" id="result-grid"></div>
+        <div class="open-notion-wrap"><a href="https://www.notion.so/5bc66ab2c3814f94acd8592dcd067d4b" target="_blank" class="notion-link">Open Declined CC Outreach in Notion &#8599;</a></div>
+        <div class="actions" style="margin-top:16px"><button class="btn btn-secondary" id="btn-reset">&#8635; Sync Another File</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const DB_ID='77b5ed46-6dc1-47c6-bbd2-f8d78825fe2e';
+let state={patients:[],rawPatientIds:new Set()};
+
+document.getElementById('header-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+
+var dz=document.getElementById('drop-zone');
+dz.addEventListener('click',()=>document.getElementById('file-input').click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0])});
+document.getElementById('file-input').addEventListener('change',e=>{if(e.target.files[0])processFile(e.target.files[0])});
+document.getElementById('btn-next-1').addEventListener('click',buildPreview);
+document.getElementById('btn-back-2').addEventListener('click',()=>goTo(1));
+document.getElementById('btn-sync-go').addEventListener('click',()=>goTo(3));
+document.getElementById('btn-back-3').addEventListener('click',()=>goTo(2));
+document.getElementById('btn-start-sync').addEventListener('click',startSync);
+document.getElementById('btn-reset').addEventListener('click',resetTool);
+
+function goTo(s){document.querySelectorAll('.section').forEach(x=>x.classList.remove('visible'));document.getElementById('section-'+s).classList.add('visible');document.querySelectorAll('.step-tab').forEach((t,i)=>{t.classList.remove('active','done');if(i+1<s)t.classList.add('done');if(i+1===s)t.classList.add('active')})}
+
+function processFile(file){
+  var alertEl=document.getElementById('upload-alert');
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{raw:true,defval:''});
+      if(!rows.length||!rows[0].hasOwnProperty('PatientId')){
+        showAlert(alertEl,'err','This does not look like a Valant CC Transactions report. Expected PatientId column.');return;
+      }
+      // Only keep Declined rows
+      var declined=rows.filter(r=>String(r.TransactionStatus||'').trim()==='Declined');
+      if(!declined.length){showAlert(alertEl,'err','No declined transactions found in this file.');return;}
+      // Aggregate by PatientId - one record per patient
+      var map={};
+      declined.forEach(function(r){
+        var pid=String(r.PatientId||'').trim();
+        if(!pid)return;
+        var name=String(r.UserName||'').trim();
+        var raw=String(r.GatewayError||r.TransactionStatus||'').toUpperCase();
+        var reason='General Decline';
+        if(raw.includes('NSF'))reason='NSF';
+        else if(raw.includes('CLOSED'))reason='Card Closed';
+        else if(raw.includes('EXP')||raw.includes('5001'))reason='Expired Card';
+        else if(raw.includes('FRAUD'))reason='Suspected Fraud';
+        else if(raw.includes('BLOCKED'))reason='Card Blocked';
+        var tdate=r.TransactionDate instanceof Date?r.TransactionDate:new Date(r.TransactionDate);
+        if(!map[pid]){map[pid]={patientId:pid,patientName:name,declineReason:reason,declineCount:0,lastDeclinedDate:tdate};}
+        map[pid].declineCount++;
+        if(tdate>map[pid].lastDeclinedDate)map[pid].lastDeclinedDate=tdate;
+      });
+      state.patients=Object.values(map);
+      state.rawPatientIds=new Set(Object.keys(map));
+      dz.classList.add('has-file');
+      document.getElementById('drop-icon').textContent='&#10003;';
+      document.getElementById('drop-label').textContent=file.name;
+      document.getElementById('drop-sub').textContent=state.patients.length+' unique patients with declined transactions';
+      document.getElementById('btn-next-1').disabled=false;
+      showAlert(alertEl,'ok','File loaded. '+state.patients.length+' patients found. Click Preview to continue.');
+    }catch(err){showAlert(alertEl,'err','Error reading file: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function buildPreview(){
+  var nsf=state.patients.filter(p=>p.declineReason==='NSF').length;
+  var closed=state.patients.filter(p=>p.declineReason==='Card Closed').length;
+  var expired=state.patients.filter(p=>p.declineReason==='Expired Card').length;
+  var other=state.patients.length-nsf-closed-expired;
+  document.getElementById('preview-stats').innerHTML=
+    '<div class="stat-box"><div class="stat-num">'+state.patients.length+'</div><div class="stat-label">Total Patients</div></div>'+
+    '<div class="stat-box"><div class="stat-num" style="color:var(--red)">'+nsf+'</div><div class="stat-label">NSF</div></div>'+
+    '<div class="stat-box"><div class="stat-num" style="color:var(--red)">'+closed+'</div><div class="stat-label">Card Closed</div></div>'+
+    '<div class="stat-box"><div class="stat-num" style="color:var(--amber)">'+(expired+other)+'</div><div class="stat-label">Other</div></div>';
+  document.getElementById('preview-tbody').innerHTML=state.patients.map(function(p){
+    var cls=p.declineReason==='NSF'||p.declineReason==='Card Closed'||p.declineReason==='Suspected Fraud'?'reason-nsf':
+            p.declineReason==='Expired Card'||p.declineReason==='Card Blocked'?'reason-expired':'reason-general';
+    var d=p.lastDeclinedDate instanceof Date?p.lastDeclinedDate.toLocaleDateString('en-US'):String(p.lastDeclinedDate||'-');
+    return '<tr><td>'+p.patientName+'</td><td style="font-size:11px">'+p.patientId+'</td><td><span class="reason-badge '+cls+'">'+p.declineReason+'</span></td><td>'+p.declineCount+'</td><td>'+d+'</td></tr>';
+  }).join('');
+  goTo(2);
+}
+
+async function startSync(){
+  document.getElementById('sync-ready').style.display='none';
+  document.getElementById('sync-progress').style.display='block';
+  var log=document.getElementById('progress-log'),fill=document.getElementById('progress-fill'),pct=document.getElementById('progress-pct'),lbl=document.getElementById('progress-label');
+  var created=0,updated=0,resolved=0,errors=0;
+  function addLog(msg,cls){var line=document.createElement('div');line.className=cls||'';line.textContent=msg;log.appendChild(line);log.scrollTop=log.scrollHeight;}
+  function setP(d,t,l){var p=Math.round(d/t*100);fill.style.width=p+'%';pct.textContent=p+'%';lbl.textContent=l;}
+  try{
+    addLog('Loading existing Notion records...');setP(0,10,'Fetching existing patients...');
+    var existingMap=await fetchAll();
+    var existingCount=Object.keys(existingMap).length;
+    addLog('  Found '+existingCount+' existing records.','log-ok');
+    var total=state.patients.length;
+    // Step 1: Create or update patients in today's file
+    for(var i=0;i<total;i++){
+      var p=state.patients[i];setP(i+1,total+10,'Processing '+p.patientName+'...');
+      var existing=existingMap[p.patientId];
+      var dateStr=p.lastDeclinedDate instanceof Date?p.lastDeclinedDate.toISOString().split('T')[0]:null;
+      if(existing){
+        // Update Valant-owned fields only - never touch Status/Notes/Outreach fields
+        try{
+          await nFetch('/pages/'+existing.pageId,'PATCH',{properties:{
+            'Patient Name':{title:[{text:{content:p.patientName}}]},
+            'Decline Reason':{select:{name:p.declineReason}},
+            'Decline Count':{number:p.declineCount},
+            'Last Declined Date':dateStr?{date:{start:dateStr}}:{date:null}
+          }});
+          addLog('  UPDATE '+p.patientId+' - '+p.patientName+' ('+p.declineReason+' x'+p.declineCount+')','log-ok');
+          updated++;
+        }catch(e){addLog('  ERROR '+p.patientId+' - '+e.message,'log-err');errors++;}
+      }else{
+        try{
+          await nFetch('/pages','POST',{parent:{database_id:DB_ID},properties:{
+            'Patient Name':{title:[{text:{content:p.patientName}}]},
+            'Patient ID':{rich_text:[{text:{content:p.patientId}}]},
+            'Decline Reason':{select:{name:p.declineReason}},
+            'Decline Count':{number:p.declineCount},
+            'Last Declined Date':dateStr?{date:{start:dateStr}}:{date:null},
+            'Status':{select:{name:'Needs Outreach'}}
+          }});
+          addLog('  + CREATE '+p.patientId+' - '+p.patientName+' ('+p.declineReason+')','log-new');
+          created++;
+        }catch(e){addLog('  ERROR '+p.patientId+' - '+e.message,'log-err');errors++;}
+      }
+      if(i%5===4)await new Promise(r=>setTimeout(r,300));
+    }
+    // Step 2: Resolve patients NOT in today's file (only if currently Needs Outreach or Contacted)
+    addLog('Checking for resolved patients...');
+    var toResolve=Object.entries(existingMap).filter(function(entry){
+      return !state.rawPatientIds.has(entry[0])&&(entry[1].status==='Needs Outreach'||entry[1].status==='Contacted');
+    });
+    setP(total,total+toResolve.length,'Resolving cleared patients...');
+    for(var j=0;j<toResolve.length;j++){
+      var entry=toResolve[j];setP(total+j+1,total+toResolve.length,'Resolving '+entry[0]+'...');
+      try{
+        await nFetch('/pages/'+entry[1].pageId,'PATCH',{properties:{'Status':{select:{name:'Resolved'}}}});
+        addLog('  Resolved '+entry[0]+' - '+entry[1].name+' (no longer in file)','log-resolve');
+        resolved++;
+      }catch(e){addLog('  ERROR resolving '+entry[0]+' - '+e.message,'log-err');errors++;}
+      if(j%5===4)await new Promise(r=>setTimeout(r,300));
+    }
+    setP(total+toResolve.length,total+toResolve.length,'Sync complete!');
+    addLog('Done - Created: '+created+' Updated: '+updated+' Resolved: '+resolved+' Errors: '+errors,'log-ok');
+    document.getElementById('result-grid').innerHTML=
+      '<div class="result-box created"><div class="result-num">'+created+'</div><div class="result-label">New Patients</div></div>'+
+      '<div class="result-box updated"><div class="result-num">'+updated+'</div><div class="result-label">Updated</div></div>'+
+      '<div class="result-box resolved"><div class="result-num">'+resolved+'</div><div class="result-label">Resolved</div></div>'+
+      '<div class="result-box skipped"><div class="result-num">'+errors+'</div><div class="result-label">Errors</div></div>';
+    document.getElementById('sync-results').style.display='block';
+  }catch(e){addLog('Fatal error: '+e.message,'log-err');}
+}
+
+async function fetchAll(){
+  var map={},cursor,hasMore=true;
+  while(hasMore){
+    var body={page_size:100};if(cursor)body.start_cursor=cursor;
+    var res=await nFetch('/databases/'+DB_ID+'/query','POST',body);
+    (res.results||[]).forEach(function(page){
+      var pid=page.properties&&page.properties['Patient ID']&&page.properties['Patient ID'].rich_text&&page.properties['Patient ID'].rich_text[0]&&page.properties['Patient ID'].rich_text[0].plain_text||'';
+      var status=page.properties&&page.properties['Status']&&page.properties['Status'].select&&page.properties['Status'].select.name||'';
+      var name=page.properties&&page.properties['Patient Name']&&page.properties['Patient Name'].title&&page.properties['Patient Name'].title[0]&&page.properties['Patient Name'].title[0].plain_text||'';
+      if(pid)map[pid]={pageId:page.id,status:status,name:name};
+    });
+    hasMore=res.has_more;cursor=res.next_cursor;
+  }
+  return map;
+}
+
+async function nFetch(path,method,body){
+  var res=await fetch('/.netlify/functions/notion-proxy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:path,method:method,body:body})});
+  var data=await res.json();if(!res.ok)throw new Error(data.message||'HTTP '+res.status);return data;
+}
+
+function showAlert(el,type,msg){el.innerHTML='<div class="alert alert-'+type+'"><span>'+(type==='ok'?'&#10003;':'&#9888;')+'</span><span>'+msg+'</span></div>';}
+
+function resetTool(){
+  state.patients=[];state.rawPatientIds=new Set();
+  dz.classList.remove('has-file');
+  document.getElementById('drop-icon').textContent='&#128179;';
+  document.getElementById('drop-label').textContent='Drop your Valant CC report here';
+  document.getElementById('drop-sub').textContent='Click or drag and drop - .xlsx file from Valant Integrated CC Transactions';
+  document.getElementById('btn-next-1').disabled=true;
+  document.getElementById('upload-alert').innerHTML='';
+  document.getElementById('file-input').value='';
+  document.getElementById('sync-progress').style.display='none';
+  document.getElementById('sync-results').style.display='none';
+  document.getElementById('sync-ready').style.display='block';
+  document.getElementById('progress-log').innerHTML='';
+  goTo(1);
+}
+</script>
+</body>
+</html>
