@@ -294,7 +294,7 @@ async function updatePage(pageId,p){await nFetch('/pages/'+pageId,'PATCH',{prope
 async function createPage(p){var props=buildProps(p);props['Status']={select:{name:'Active'}};await nFetch('/pages','POST',{parent:{database_id:DB_ID},properties:props});}
 
 function buildProps(p){
-  var props={'Patient Name':{title:[{text:{content:p.patientName}}]},'Patient ID ':{rich_text:[{text:{content:p.p.patientId}}]},'Total Balance':{number:r2(p.totalBalance)},'Balance 0-30 Days':{number:r2(p.b0_30)},'Balance 31-90 Days':{number:r2(p.b31_90)},'Balance 90+ Days':{number:r2(p.b90plus)},'Max Aging Days':{number:p.maxAgingDays},'Priority':{select:{name:p.priority==='High'?' High':p.priority==='Medium'?' Medium':' Low'}},'Aging Summary':{rich_text:[{text:{content:p.agingText}}]}};
+  var props={'Patient Name':{title:[{text:{content:p.patientName}}]},'Patient ID ':{rich_text:[{text:{content:p.patientId}}]},'Total Balance':{number:r2(p.totalBalance)},'Balance 0-30 Days':{number:r2(p.b0_30)},'Balance 31-90 Days':{number:r2(p.b31_90)},'Balance 90+ Days':{number:r2(p.b90plus)},'Max Aging Days':{number:p.maxAgingDays},'Priority':{select:{name:p.priority==='High'?' High':p.priority==='Medium'?' Medium':' Low'}},'Aging Summary':{rich_text:[{text:{content:p.agingText}}]}};
   if(p.oldestDos)props['Oldest Service Date']={date:{start:p.oldestDos.toISOString().split('T')[0]}};
   return props;
 }
