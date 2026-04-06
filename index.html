@@ -195,8 +195,8 @@ function processFile(file){
     try{
       var wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
       var sn=wb.SheetNames.find(n=>n.includes('Aging')&&!n.toLowerCase().includes('pivot'))||wb.SheetNames.find(n=>!n.toLowerCase().includes('pivot'))||wb.SheetNames[0];
-      var rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{raw:true,defval:''});
-      if(!rows.length||!rows[0].hasOwnProperty('PatientId')){showAlert(alertEl,'err','This does not look like a Valant AgingDetail export. Please check you downloaded the correct report.');return;}
+      var ws=wb.Sheets[sn]||wb.Sheets[wb.SheetNames[0]];var rows=ws?XLSX.utils.sheet_to_json(ws,{raw:true,defval:''}) : [];
+      if(!rows.length||!rows[0]||!rows[0].hasOwnProperty('PatientId')){showAlert(alertEl,'err','Could not read the file. Make sure you are uploading the Aging Detail Provider report from Valant.');return;}
       state.rawData=rows;
       state.allCptCodes=[...new Set(rows.map(r=>String(r.TransactionCode||'').trim()).filter(Boolean))].sort();
       dz.classList.add('has-file');
