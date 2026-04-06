@@ -233,7 +233,7 @@ function buildPreview(){
   var map={};
   filtered.forEach(function(row){
     var pid=String(row.PatientId||'').trim();if(!pid)return;
-    var bal=parseFloat(row.PatientBalance)||0,aging=parseInt(row.AgingDays)||0,dos=row.DateOfService?new Date(row.DateOfService):null;
+    var bal=parseFloat(String(row.PatientBalance||'').replace(/[$,()]/g,'').trim())||0,aging=parseInt(String(row.AgingDays||'').replace(/[$,]/g,'').trim())||0,dos=row.DateOfService?new Date(row.DateOfService):null;
     if(!map[pid])map[pid]={patientId:pid,patientName:String(row.PatientName||'').trim(),totalBalance:0,b0_30:0,b31_90:0,b90plus:0,maxAgingDays:0,oldestDos:null};
     var p=map[pid];p.totalBalance+=bal;
     if(aging<=30)p.b0_30+=bal;else if(aging<=90)p.b31_90+=bal;else p.b90plus+=bal;
