@@ -234,8 +234,8 @@ function buildPreview(){
   filtered.forEach(function(row){
     var pid=String(row.PatientId||'').trim();if(!pid)return;
     var bal=parseFloat(String(row.PatientBalance||'').replace(/[$,()]/g,'').trim())||0,aging=parseInt(String(row.AgingDays||'').replace(/[$,]/g,'').trim())||0,dos=row.DateOfService?new Date(row.DateOfService):null;
-    if(!map[pid])map[pid]={patientId:pid,patientName:String(row.PatientName||'').trim(),totalBalance:0,b0_30:0,b31_90:0,b90plus:0,maxAgingDays:0,oldestDos:null};
-    var p=map[pid];p.totalBalance+=bal;
+    if(!map[pid])map[pid]={patientId:pid,patientName:String(row.PatientName||'').trim(),totalBalance:0,b0_30:0,b31_90:0,b90plus:0,maxAgingDays:0,oldestDos:null,copayOutstanding:0};
+    var co=parseFloat(String(row.CopayOutstanding||'').replace(/[$,()]/g,'').trim())||0;var p=map[pid];p.totalBalance+=(bal+co);p.copayOutstanding+=co;
     if(aging<=30)p.b0_30+=bal;else if(aging<=90)p.b31_90+=bal;else p.b90plus+=bal;
     if(aging>p.maxAgingDays)p.maxAgingDays=aging;
     if(dos&&(!p.oldestDos||dos<p.oldestDos))p.oldestDos=dos;
@@ -294,7 +294,7 @@ async function updatePage(pageId,p){await nFetch('/pages/'+pageId,'PATCH',{prope
 async function createPage(p){var props=buildProps(p);props['Status']={select:{name:'Active'}};await nFetch('/pages','POST',{parent:{database_id:DB_ID},properties:props});}
 
 function buildProps(p){
-  var props={'Patient Name':{title:[{text:{content:p.patientName}}]},'Patient ID ':{rich_text:[{text:{content:p.patientId}}]},'Total Balance':{number:r2(p.totalBalance)},'Balance 0-30 Days':{number:r2(p.b0_30)},'Balance 31-90 Days':{number:r2(p.b31_90)},'Balance 90+ Days':{number:r2(p.b90plus)},'Max Aging Days':{number:p.maxAgingDays},'Priority':{select:{name:p.priority==='High'?' High':p.priority==='Medium'?' Medium':' Low'}},'Aging Summary':{rich_text:[{text:{content:p.agingText}}]}};
+  var props={'Patient Name':{title:[{text:{content:p.patientName}}]},'Patient ID ':{rich_text:[{text:{content:p.patientId}}]},'Total Balance':{number:r2(p.totalBalance)},'Balance 0-30 Days':{number:r2(p.b0_30)},'Balance 31-90 Days':{number:r2(p.b31_90)},'Balance 90+ Days':{number:r2(p.b90plus)},'Max Aging Days':{number:p.maxAgingDays},'Priority':{select:{name:p.priority==='High'?' High':p.priority==='Medium'?' Medium':' Low'}},'Aging Summary':{rich_text:[{text:{content:p.agingText}}]},'Copay Outstanding':{number:r2(p.copayOutstanding)}};
   if(p.oldestDos)props['Oldest Service Date']={date:{start:p.oldestDos.toISOString().split('T')[0]}};
   return props;
 }
